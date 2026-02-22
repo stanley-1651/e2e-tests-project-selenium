@@ -3,10 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start": "ng serve --port 4200",
+    "wait:app": "wait-on http://localhost:4200",
+    "test:selenium": "dotnet test ./tests-selenium/UiTests/UiTests.csproj",
+    "e2e:all": "concurrently -k -s first -n APP,TEST \"npm run start\" \"npm run wait:app && npm run test:selenium\""
   },
   "private": true,
   "dependencies": {
