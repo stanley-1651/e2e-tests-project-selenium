@@ -1,0 +1,92 @@
+############################
+# OS junk (macOS / Windows)
+############################
+.DS_Store
+.AppleDouble
+.LSOverride
+
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+############################
+# IDE / Editors
+############################
+.vscode/
+.idea/
+*.iml
+
+# Visual Studio / Rider / VS Code local files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+*.tmp
+
+############################
+# Node / Angular
+############################
+node_modules/
+dist/
+out/
+tmp/
+.temp/
+.cache/
+.angular/
+coverage/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env files (keep a sample if needed)
+.env
+.env.*
+!.env.example
+
+############################
+# .NET / C#
+############################
+bin/
+obj/
+TestResults/
+*.nupkg
+*.snupkg
+project.lock.json
+
+# dotnet tools & local settings
+.dotnet/
+# (Optional) local dev certs / secrets - normally keep out of git
+**/secrets.json
+
+############################
+# Selenium / WebDriver artifacts
+############################
+chromedriver*
+geckodriver*
+msedgedriver*
+selenium-server-standalone*.jar
+webdriver*.log
+
+############################
+# Build artifacts (general)
+############################
+*.log
+*.pid
+*.seed
+*.bak
+
+############################
+# Optional: lockfiles policy
+############################
+# If your team wants ONLY ONE lockfile, keep the one you use and ignore others.
+# For most projects, it's OK to COMMIT package-lock.json / yarn.lock / pnpm-lock.yaml
+# Uncomment if you want to ignore them:
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
