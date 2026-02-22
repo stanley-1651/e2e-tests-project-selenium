@@ -14,10 +14,7 @@ public class SmokeTests : TestBase
     [SetUp]
     public void SetUp()
     {
-        new DriverManager().SetUpDriver(new ChromeConfig());
-
-        var options = new ChromeOptions();
-        _driver = new ChromeDriver(options);
+        _driver = DriverFactory.CreateChrome();
     }
 
     [TearDown]
