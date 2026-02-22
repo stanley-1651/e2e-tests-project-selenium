@@ -3,10 +3,11 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using WebDriverManager;
 using WebDriverManager.DriverConfigs.Impl;
+using UiTests.Core;
 
 namespace UiTests;
 
-public class SmokeTests
+public class SmokeTests : TestBase
 {
     private IWebDriver _driver = null!;
 
@@ -29,7 +30,7 @@ public class SmokeTests
     [Test]
     public void App_Should_Open()
     {
-        _driver.Navigate().GoToUrl("http://localhost:4200/");
+        _driver.Navigate().GoToUrl($"{BaseUrl}/");
         Thread.Sleep(3000);
         Assert.That(_driver.PageSource, Does.Contain("body"));
     }
