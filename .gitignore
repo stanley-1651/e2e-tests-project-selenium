@@ -90,3 +90,14 @@ webdriver*.log
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+# .NET test artifacts
+TestResults/
+**/*.trx
+
+# generated reports
+tests-selenium/test-report/
+tests-selenium/**/test-report/
+
+# screenshots artifacts
+**/artifacts/

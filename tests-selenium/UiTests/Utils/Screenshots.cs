@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using OpenQA.Selenium;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -13,11 +12,9 @@ public static class Screenshots
 
         var path = Path.Combine(ArtifactsDir(), $"{Sanitize(fileNameNoExt)}.png");
 
-        // 1) screenshot całego viewportu
         var screenshot = ((ITakesScreenshot)driver).GetScreenshot();
         using var img = Image.Load(screenshot.AsByteArray);
 
-        // 2) wycinamy prostokąt elementu
         var rect = new Rectangle(
             x: Math.Max(element.Location.X, 0),
             y: Math.Max(element.Location.Y, 0),

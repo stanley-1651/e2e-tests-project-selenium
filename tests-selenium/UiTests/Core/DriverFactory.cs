@@ -13,6 +13,7 @@ public static class DriverFactory
 
         var options = new ChromeOptions();
         options.AddArgument("--window-size=1400,900");
+        options.AddArgument("--force-device-scale-factor=1");
 
         return new ChromeDriver(options);
     }
