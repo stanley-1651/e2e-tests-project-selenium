@@ -1,4 +1,5 @@
 using OpenQA.Selenium;
+using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 
 namespace UiTests.Components;
@@ -19,75 +20,80 @@ public class FileTree
 
     public bool IsVisible() => Root.Displayed;
 
-    /// <summary>
-    /// Rozwijanie drzewa po ścieżce unixowej (np. /home/user/projects/README.md).
-    /// Zwraca nazwę końcowego elementu odczytaną z UI.
-    /// Rekurencja => bez pętli, jak opisano w wymaganiach :)
-    /// </summary>
+    private void ExpandRootIfPresent()
+    {
+        try
+        {
+            var rootContainer = FindNodeContainerByLabel("/");
+            ExpandIfCollapsed("/", rootContainer);
+        }
+        catch (WebDriverTimeoutException)
+        {
+        }
+    }
+
     public string ExpandPath(string unixPath)
     {
         var segments = SplitUnixPath(unixPath);
         if (segments.Length == 0) throw new ArgumentException("Empty path.", nameof(unixPath));
 
+        ExpandRootIfPresent();
         ExpandRec(segments, 0);
 
-        // Odczytywanie końcowego node z UI, stosownie do instrukcji
         var leafName = segments[^1];
-        _wait.Until(_ => Root.FindElements(By.XPath($".//*[contains(normalize-space(.), {EscapeXPathText(leafName)})]")).Count > 0);
+        _wait.Until(_ => Root.FindElements(By.XPath(
+            $".//*[contains(normalize-space(.), {EscapeXPathText(leafName)})]"
+        )).Count > 0);
+
         return leafName;
     }
 
-    public bool AreChildrenVisible(string folderName)
+    public bool IsNodeVisible(string name)
     {
-        var container = FindNodeContainerByLabel(folderName);
-        var group = container.FindElement(By.CssSelector("div[role='group']"));
-        return !HasInvisibleClass(group);
+        var toggleXPath = $".//button[@aria-label={EscapeXPathText($"Toggle {name}")}]";
+        var toggles = Root.FindElements(By.XPath(toggleXPath));
+        if (toggles.Count > 0) return toggles[0].Displayed;
+
+        var leafXPath = $".//*[contains(normalize-space(.), {EscapeXPathText(name)})]";
+        var leaves = Root.FindElements(By.XPath(leafXPath));
+        return leaves.Count > 0 && leaves[0].Displayed;
     }
 
     private void ExpandRec(string[] segments, int index)
     {
-        // ostatni segment (plik) – zakończenie procesowania ścieki
         if (index >= segments.Length - 1) return;
 
         var name = segments[index];
+        var next = segments[index + 1];
 
         var container = FindNodeContainerByLabel(name);
-
-        // Rozwijanie tylko jeśli zwiniętego folderu
         ExpandIfCollapsed(name, container);
 
-        // Rekurencja :)
+        _wait.Until(_ => IsPathSegmentVisible(next));
+
         ExpandRec(segments, index + 1);
     }
 
     private void ExpandIfCollapsed(string nodeName, IWebElement container)
     {
-        var toggle = TryFindToggle(nodeName, container);
-        if (toggle is null) return; // liść
+        if (TryFindToggle(nodeName, container) is null) return;
+        if (!IsGroupCollapsed(nodeName)) return;
 
-        var group = TryFindGroup(container);
-        if (group is null) return;
+        var toggleBy = By.CssSelector($"button[aria-label='Toggle {EscapeCssString(nodeName)}']");
+        var toggle = _wait.Until(_ => Root.FindElement(toggleBy));
 
-        if (HasInvisibleClass(group))
+        ScrollIntoView(toggle);
+
+        try
         {
-            ScrollIntoView(toggle);
-            JsClick(toggle);
-
-            // Czekanie aż children staną się widoczne (innymi słowy - zniknie example-tree-invisible)
-            _wait.Until(_ =>
-            {
-                try
-                {
-                    return !HasInvisibleClass(group);
-                }
-                catch (StaleElementReferenceException)
-                {
-                    // Angular mógł przerysować węzeł – szukam group ponownie
-                    var freshGroup = TryFindGroup(container);
-                    return freshGroup is not null && !HasInvisibleClass(freshGroup);
-                }
-            });
+            new Actions(_driver).MoveToElement(toggle).Click().Perform();
         }
+        catch
+        {
+            DispatchClick(toggle);
+        }
+
+        _wait.Until(_ => !IsGroupCollapsed(nodeName));
     }
 
     private IWebElement FindNodeContainerByLabel(string label)
@@ -112,18 +118,6 @@ public class FileTree
         try
         {
             return container.FindElement(By.CssSelector($"button[aria-label='Toggle {EscapeCssString(nodeName)}']"));
-        }
-        catch (NoSuchElementException)
-        {
-            return null;
-        }
-    }
-
-    private static IWebElement? TryFindGroup(IWebElement container)
-    {
-        try
-        {
-            return container.FindElement(By.CssSelector("div[role='group']"));
         }
         catch (NoSuchElementException)
         {
@@ -157,8 +151,68 @@ public class FileTree
             element);
     }
 
-    private void JsClick(IWebElement element)
+    private bool IsGroupCollapsed(string folderName)
     {
-        ((IJavaScriptExecutor)_driver).ExecuteScript("arguments[0].click();", element);
+        try
+        {
+            var group = FindGroupFresh(folderName);
+            return HasInvisibleClass(group);
+        }
+        catch (NoSuchElementException)
+        {
+            return true;
+        }
+        catch (StaleElementReferenceException)
+        {
+            return true;
+        }
+    }
+
+    private IWebElement FindGroupFresh(string folderName)
+    {
+        var groupBy = By.XPath(
+            $".//button[@aria-label={EscapeXPathText($"Toggle {folderName}")}]" +
+            $"/ancestor::mat-nested-tree-node[1]//div[@role='group']"
+        );
+
+        return Root.FindElement(groupBy);
+    }
+
+    private void DispatchClick(IWebElement element)
+    {
+        ((IJavaScriptExecutor)_driver).ExecuteScript(@"
+            const el = arguments[0];
+            el.dispatchEvent(new MouseEvent('mouseover', {bubbles:true}));
+            el.dispatchEvent(new MouseEvent('mousemove', {bubbles:true}));
+            el.dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
+            el.dispatchEvent(new MouseEvent('mouseup', {bubbles:true}));
+            el.dispatchEvent(new MouseEvent('click', {bubbles:true}));
+        ", element);
+    }
+
+    private bool IsElementVisible(By by)
+    {
+        try
+        {
+            var el = Root.FindElement(by);
+            return el.Displayed;
+        }
+        catch (NoSuchElementException)
+        {
+            return false;
+        }
+        catch (StaleElementReferenceException)
+        {
+            return false;
+        }
+    }
+
+    private bool IsPathSegmentVisible(string name)
+    {
+        var toggleBy = By.XPath($".//button[@aria-label={EscapeXPathText($"Toggle {name}")}]");
+        if (IsElementVisible(toggleBy)) return true;
+
+        var leafBy = By.XPath($".//mat-nested-tree-node[not(.//button) and contains(normalize-space(.), {EscapeXPathText(name)})]");
+        return IsElementVisible(leafBy);
     }
 }

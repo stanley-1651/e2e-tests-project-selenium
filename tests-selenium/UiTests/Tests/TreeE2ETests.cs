@@ -38,13 +38,13 @@ public class TreeE2ETests : TestBase
         // Assert: drzewo jest widoczne
         Assert.That(_page.FileTree.IsVisible(), Is.True);
 
-        // Rozwiń ścieżkę (rekurencja, bez pętli)
+        // Rozwijanie ścieżki (rekurencja, bez pętli)
         var fileNameFromUi = _page.FileTree.ExpandPath(path);
 
-        // Assert: po drodze foldery są rozwinięte (walidacja stanu UI)
-        Assert.That(_page.FileTree.AreChildrenVisible("home"), Is.True);
-        Assert.That(_page.FileTree.AreChildrenVisible("user"), Is.True);
-        Assert.That(_page.FileTree.AreChildrenVisible("projects"), Is.True);
+        // Assert: walidacja stanu UI - rozwijanie folderów
+        Assert.That(_page.FileTree.IsNodeVisible("user"), Is.True);
+        Assert.That(_page.FileTree.IsNodeVisible("projects"), Is.True);
+        Assert.That(_page.FileTree.IsNodeVisible("README.md"), Is.True);
 
         // Screenshot drzewa po rozwinięciu
         Screenshots.SaveElementPng(_driver, _page.FileTree.Root, "tree-after-expand");

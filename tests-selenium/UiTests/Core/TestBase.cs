@@ -1,5 +1,3 @@
-using NUnit.Framework;
-
 namespace UiTests.Core;
 
 public abstract class TestBase

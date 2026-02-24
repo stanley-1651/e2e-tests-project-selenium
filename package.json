@@ -8,8 +8,10 @@
     "test": "ng test",
     "start": "ng serve --port 4200",
     "wait:app": "wait-on http://localhost:4200",
-    "test:selenium": "dotnet test ./tests-selenium/UiTests/UiTests.csproj",
-    "e2e:all": "concurrently -k -s first -n APP,TEST \"npm run start\" \"npm run wait:app && npm run test:selenium\""
+    "test:selenium": "dotnet test ./tests-selenium/UiTests/UiTests.csproj --logger \"trx;LogFileName=test-results.trx\"",
+    "report:html": "TrxToExtentReport -t \"tests-selenium/UiTests/TestResults/test-results.trx\" -o \"tests-selenium/test-report/ExtentReport.html\"",
+    "e2e": "concurrently -k -s first -n APP,TEST \"npm run start\" \"npm run wait:app && npm run test:selenium\"",
+    "e2e:report": "npm run e2e && npm run report:html"
   },
   "private": true,
   "dependencies": {
